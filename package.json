@@ -11,6 +11,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "request": "^2.88.0"
+    "readline-promise": "^1.0.4",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7"
   }
 }

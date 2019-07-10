@@ -1,113 +1,125 @@
 /* imports */
-var readline = require('readline');
-var service = require('./service.js');
 
-/* content */
+const rl = new (require('./util.js').ReadlinePromise)();
+const service = new (require('./service.js').Service)();
 
-var choix = null;
-
-
-var rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
-
-var start = function() {
+class Presentation {
+    constructor() {
+    }
     
-
-    console.log("1. Rechercher un collègue par nom");
-    console.log("2. Créer un collegue");
-    console.log("3. Modifier un collegue");
-    console.log("99. Sortir");
-
-
-    rl.question("Votre choix : ", function(saisie){
+    start() {
     
-        switch(saisie) {
-            case '1' :
-                rechercheCollegue();
-                break;
-            case '2' :
-                creerCollegue();
-                break;
-            case '3' :
-                modifierCollegue1();
-                break;
-            case '99' :
-                console.log("Au revoir.");
-                rl.close();
-                break;
-            default :
-                console.log("Choix inconnu.");
-                start();
-        }
-    });
-} 
+        console.log("1. Rechercher un collègue par nom");
+        console.log("2. Créer un collegue");
+        console.log("3. Modifier un collegue");
+        console.log("99. Sortir");
 
-var rechercheCollegue = function() {
-    rl.question("Nom des collegues à rechercher : ", function(saisie) {
-        console.log(`Recheche des collegues ${saisie} ...`);
-        service.rechercheCollegueParNom(saisie.trim(), function(collegues) {
-            console.log(collegues);
-            start();
-        });
-    });
-}
-
-var creerCollegue = function() {
-    rl.question("Nom du collegue à ajouter : ", function(saisie) {
-        var collegue = {};
-        collegue.lastName = saisie.trim();
-        rl.question("Prenom du collegue : ", function(saisie) {
-            collegue.firstName = saisie.trim();
-            rl.question("Email du collegue : ", function(saisie) {
-                collegue.email = saisie.trim();
-                rl.question("Photo du collegue : ", function(saisie) {
-                    collegue.pictureUrl = saisie.trim();
-                    rl.question("Date de naissance : ", function(saisie) {
-                        collegue.birthDate = saisie.trim();
-                        service.ajouterCollegue(collegue, function(collegue) {
-                            console.log(collegue);
-                            start();
-                        });
-                    })
-                });
-            });
-        });
-    });
-    
-}
-
-var modifierCollegue1 = function() {
-    rl.question("Matricule du collegue modifier : ", function(saisie) {
-        service.rechercheCollegueParMatricule(saisie.trim(), function(collegue) {
-            console.log(collegue);
-            if(collegue.matricule == undefined) {
-                start();
-            } else {
-                modifierCollegue2(collegue);
+        rl.question("Votre choix : ")
+        .then(saisie => {
+        
+            switch(saisie) {
+                case '1' :
+                    this.rechercheCollegue();
+                    break;
+                case '2' :
+                    this.creerCollegue();
+                    break;
+                case '3' :
+                    this.modifierCollegue();
+                    break;
+                case '99' :
+                    console.log("Au revoir.");
+                    rl.close();
+                    break;
+                default :
+                    console.log("Choix inconnu.");
+                    this.start();
             }
         });
-    });
-}
+    } 
+    
+    rechercheCollegue() {
+        rl.question("Nom des collegues à rechercher : ")
+        .then(saisie => {
+            console.log(`Recheche des collegues ${saisie} ...`);
+            return service.rechercheCollegueParNom(saisie.trim());
+        })
+        .then((collegues) => {
+            console.log(collegues);
+            this.start();
+        });
+    }
+    
+    creerCollegue(){
+        let collegue = {};
+        rl.question("Nom du collegue à ajouter : ")
+        .then(saisie => {
+            collegue.lastName = saisie.trim();
+            return rl.question("Prenom du collegue : ");
+        })
+        .then(saisie => {
+            collegue.firstName = saisie.trim();
+            return rl.question("Email du collegue : ");
+        })
+        .then(saisie => {
+            collegue.email = saisie.trim();
+            return rl.question("Photo du collegue : ");
+        })
+        .then(saisie => {
+            collegue.pictureUrl = saisie.trim();
+            return rl.question("Date de naissance : ");
+        })
+        .then (saisie => {
+            collegue.birthDate = saisie.trim();
+            return service.ajouterCollegue(collegue);
+        })
+        .then(collegue => {
+            console.log(collegue);
+            this.start();
+        })
+        .catch(error => {
+            console.log("Parametre(s) incorrect(s)");
+            this.start();
+        });
+    }
+    
+    modifierCollegue() {
 
-var modifierCollegue2 = function(collegue) {
-    var nouveauCollegue = {};
-    rl.question("Nouvel email (ne rien saisir pour ne pas modifier) : ", function(saisie) {
-        if (saisie.trim() != "") {
-            nouveauCollegue.email = saisie.trim();
-        }
-        rl.question("Nouvel image (ne rien saisir pour ne pas modifier) : ", function(saisie) {
+        let nouveauCollegue = {};
+        let matricule;
+        rl.question("Matricule du collegue modifier : ")
+        .then(saisie => service.rechercheCollegueParMatricule(saisie.trim()))
+        .then(collegue => {
+            console.log(collegue);
+            matricule = collegue.matricule;
+            return rl.question("Nouvel email (ne rien saisir pour ne pas modifier) : ");
+        })
+        .then (saisie => {
+            if (saisie.trim() != "") {
+                nouveauCollegue.email = saisie.trim();
+            }
+            return rl.question("Nouvel image (ne rien saisir pour ne pas modifier) : ");
+        })
+        .then (saisie => {
             if (saisie.trim() != "") {
                 nouveauCollegue.pictureUrl = saisie.trim();
             }
-            service.updateCollegue(collegue.matricule, nouveauCollegue, function(collegue) {
-                console.log(collegue);
-                start();
-            });
+            return service.updateCollegue(matricule, nouveauCollegue);
+        })
+        .then (collegue => {
+            console.log(collegue);
+            this.start();
+        })
+        .catch(error => {
+            console.log(error.error);
+            this.start();
         });
-    });
+    }
 }
 
+
+
+
 /* exports */
-exports.start = start;
+exports.Presentation = Presentation;
+ 
