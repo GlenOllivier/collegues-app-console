@@ -1,19 +1,31 @@
 /* imports */
+import {ReadlinePromise} from './util';
+const rl = new ReadlinePromise();
 
-const rl = new (require('./util.js').ReadlinePromise)();
-const service = new (require('./service.js').Service)();
+import {Collegue, CollegueDto} from './domain';
 
-class Presentation {
+import Service from './service';
+const service = new Service();
+
+/* Presentation */
+
+export default class Presentation {
+
+    // constructeur vide car pas de variable locale
     constructor() {
     }
     
+    // methode qui lance un menu
     start() {
-    
+
+        console.log("");
+        console.log("** Administration Collegues **");
         console.log("1. Rechercher un collègue par nom");
         console.log("2. Créer un collegue");
         console.log("3. Modifier un collegue");
         console.log("99. Sortir");
 
+        // question a partir du redline de util, qui revoie une promesse
         rl.question("Votre choix : ")
         .then(saisie => {
         
@@ -28,30 +40,39 @@ class Presentation {
                     this.modifierCollegue();
                     break;
                 case '99' :
+                    // pour quitter, on ferme le scanner et on ne relance pas de menu
                     console.log("Au revoir.");
                     rl.close();
                     break;
                 default :
+                    // en cas de choix inconnu, on relance simplement le menu
                     console.log("Choix inconnu.");
                     this.start();
             }
         });
     } 
     
+    // recherche de collegues a partir du nom
     rechercheCollegue() {
+        // saisie du nom du collegue
         rl.question("Nom des collegues à rechercher : ")
+        // recherche dans la base de donnees
         .then(saisie => {
             console.log(`Recheche des collegues ${saisie} ...`);
             return service.rechercheCollegueParNom(saisie.trim());
         })
+        // affichage et relancement d'un menu
         .then((collegues) => {
             console.log(collegues);
             this.start();
         });
     }
     
+    //creation de collegue
     creerCollegue(){
-        let collegue = {};
+        let collegue = new Collegue();
+
+        // renseignement des champs du nouveau collegue
         rl.question("Nom du collegue à ajouter : ")
         .then(saisie => {
             collegue.lastName = saisie.trim();
@@ -71,13 +92,19 @@ class Presentation {
         })
         .then (saisie => {
             collegue.birthDate = saisie.trim();
+
+            // ajout du collegue dans la bdd
             return service.ajouterCollegue(collegue);
         })
         .then(collegue => {
+
+            // affichage, puis menu
             console.log(collegue);
             this.start();
         })
         .catch(error => {
+
+            // en ca d'erreur on relance le menu
             console.log("Parametre(s) incorrect(s)");
             this.start();
         });
@@ -85,13 +112,15 @@ class Presentation {
     
     modifierCollegue() {
 
-        let nouveauCollegue = {};
-        let matricule;
-        rl.question("Matricule du collegue modifier : ")
+        let nouveauCollegue = (<CollegueDto>{});
+        let matricule:string;
+
+        // recherche de matricule
+        rl.question("Matricule du collegue à modifier : ")
         .then(saisie => service.rechercheCollegueParMatricule(saisie.trim()))
         .then(collegue => {
             console.log(collegue);
-            matricule = collegue.matricule;
+            matricule = (<string>collegue.matricule);
             return rl.question("Nouvel email (ne rien saisir pour ne pas modifier) : ");
         })
         .then (saisie => {
@@ -116,10 +145,4 @@ class Presentation {
         });
     }
 }
-
-
-
-
-/* exports */
-exports.Presentation = Presentation;
  

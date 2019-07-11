@@ -1,7 +1,8 @@
 
-const readlineImport = require('readline');
+import * as readlineImport from 'readline';
 
-class ReadlinePromise{
+export class ReadlinePromise{
+    readline: readlineImport.Interface;
     constructor() {
         this.readline = readlineImport.createInterface({
             input: process.stdin,
@@ -9,7 +10,7 @@ class ReadlinePromise{
         });
     }
 
-    question(questionPosee) {
+    question(questionPosee: string):Promise<string> {
         let readline = this.readline;
         return new Promise(function(resolve, reject) {
             readline.question(questionPosee, function(saisie) {
@@ -23,5 +24,3 @@ class ReadlinePromise{
         this.readline.close();
     }
 }
-
-exports.ReadlinePromise = ReadlinePromise;
